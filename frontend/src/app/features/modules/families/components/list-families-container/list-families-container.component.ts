@@ -37,6 +37,7 @@ import {
   ModalFamilyDetailsComponent,
   ModalFamilyDetailsInterface,
 } from '../modal-family-details/modal-family-details.component';
+import { openResponsiveModal } from 'app/shared/utils/open-responsive-modal.util';
 
 @Component({
   selector: 'app-list-families-container',
@@ -111,19 +112,17 @@ export class ListFamiliesContainerComponent {
   }
 
   openModalToCreateAndEditFamily(family?: FamilyModel) {
-    let afterDismissed: Observable<ModalCreateUpdateFamilyResponse | undefined>;
-
     const data: ModalCreateUpdateFamilyInterface = { family };
-
-    if (this.mediaMatcher.matchMedia('(max-width: 600px)').matches) {
-      afterDismissed = this.matBottomSheet
-        .open(ModalCreateUpdateFamilyComponent, { data })
-        ?.afterDismissed();
-    } else {
-      afterDismissed = this.matDialog
-        .open(ModalCreateUpdateFamilyComponent, { data })
-        ?.afterClosed();
-    }
+    const afterDismissed = openResponsiveModal<
+      ModalCreateUpdateFamilyInterface,
+      ModalCreateUpdateFamilyResponse
+    >(
+      this.mediaMatcher,
+      this.matDialog,
+      this.matBottomSheet,
+      ModalCreateUpdateFamilyComponent,
+      data
+    );
 
     afterDismissed.pipe(first()).subscribe((result) => {
       if (result) {
@@ -135,21 +134,14 @@ export class ListFamiliesContainerComponent {
   }
 
   viewFamilyDetails(family: FamilyModel) {
-    let afterDismissed: Observable<undefined>;
-
     const data: ModalFamilyDetailsInterface = { familyId: family.id };
-
-    if (this.mediaMatcher.matchMedia('(max-width: 600px)').matches) {
-      afterDismissed = this.matBottomSheet
-        .open(ModalFamilyDetailsComponent, { data })
-        ?.afterDismissed();
-    } else {
-      afterDismissed = this.matDialog
-        .open(ModalFamilyDetailsComponent, { data })
-        ?.afterClosed();
-    }
-
-    afterDismissed?.subscribe();
+    openResponsiveModal<ModalFamilyDetailsInterface, undefined>(
+      this.mediaMatcher,
+      this.matDialog,
+      this.matBottomSheet,
+      ModalFamilyDetailsComponent,
+      data
+    ).subscribe();
   }
 }
 
