@@ -6,7 +6,6 @@ import {
   ValidationIssue,
   ValidationResult,
 } from '@/core/domain-validation';
-import { FamilyMapper } from '../mappers/family.mapper';
 
 export interface FamilyProps extends BaseProps {
   name: string;
@@ -15,16 +14,12 @@ export interface FamilyProps extends BaseProps {
   fatherId: UniqueEntityID | null;
   motherId: UniqueEntityID | null;
 
-  father?: FamilyDomain;
-  mother?: FamilyDomain;
-  children?: FamilyDomain[];
+  father?: Family;
+  mother?: Family;
+  children?: Family[];
 }
 
-export class FamilyDomain extends Entity<FamilyProps> {
-  private static isFamilyDomain(v: unknown): v is FamilyDomain {
-    return v instanceof FamilyDomain;
-  }
-
+export class Family extends Entity<FamilyProps> {
   getName = () => this.props.name;
   getBirthDate = () => this.props.birthDate;
   getDocument = () => this.props.document;
@@ -45,59 +40,23 @@ export class FamilyDomain extends Entity<FamilyProps> {
     if (name) this.props.name = name;
     if (birthDate) this.props.birthDate = birthDate;
     if (document) this.props.document = document;
-    if (fatherId) this.updateFather(fatherId);
-    if (motherId) this.updateMother(motherId);
+    if (fatherId) this.props.fatherId = fatherId;
+    if (motherId) this.props.motherId = motherId;
 
     return this;
   }
 
-  updateFather(father: FamilyDomain | UniqueEntityID) {
-    if (FamilyDomain.isFamilyDomain(father)) {
-      const newId = father.getId();
-      const idChanged = newId.toValue() !== this.props.fatherId?.toValue();
-      const instanceChanged = this.props.father !== father;
-
-      this.props.father = father;
-      this.props.fatherId = newId;
-
-      if (idChanged || instanceChanged) this.props.updatedAt = new Date();
-    } else {
-      const idChanged = father.toValue() !== this.props.fatherId?.toValue();
-      this.props.fatherId = father;
-
-      if (idChanged) {
-        this.props.father = undefined;
-        this.props.updatedAt = new Date();
-      }
-    }
-
+  setFather(father: Family) {
+    this.props.father = father;
     return this;
   }
 
-  updateMother(mother: FamilyDomain | UniqueEntityID) {
-    if (FamilyDomain.isFamilyDomain(mother)) {
-      const newId = mother.getId();
-      const idChanged = newId.toValue() !== this.props.motherId?.toValue();
-      const instanceChanged = this.props.mother !== mother;
-
-      this.props.mother = mother;
-      this.props.motherId = newId;
-
-      if (idChanged || instanceChanged) this.props.updatedAt = new Date();
-    } else {
-      const idChanged = mother.toValue() !== this.props.motherId?.toValue();
-      this.props.motherId = mother;
-
-      if (idChanged) {
-        this.props.mother = undefined;
-        this.props.updatedAt = new Date();
-      }
-    }
-
+  setMother(mother: Family) {
+    this.props.mother = mother;
     return this;
   }
 
-  setChildren(children: FamilyDomain[]) {
+  setChildren(children: Family[]) {
     this.props.children = children;
     return this;
   }
@@ -108,190 +67,177 @@ export class FamilyDomain extends Entity<FamilyProps> {
 
   validateAll(): ValidationResult {
     const issues: ValidationIssue[] = [];
-    const now = new Date();
-    const minBirth = new Date('1900-01-01T00:00:00Z');
+    this.validateName(issues);
+    this.validateDocument(issues);
+    this.validateTemporalProps(issues);
+    this.validateRelations(issues);
+    return { ok: issues.length === 0, errors: issues };
+  }
 
-    const isValidDate = (d: unknown): d is Date =>
-      d instanceof Date && !Number.isNaN(d.getTime());
+  private isValidDate(d: unknown): d is Date {
+    return d instanceof Date && !Number.isNaN(d.getTime());
+  }
 
+  private validateName(issues: ValidationIssue[]) {
     if (
       typeof this.props.name !== 'string' ||
       this.props.name.trim().length < 2
-    ) {
+    )
       issues.push({
         path: 'name',
         code: 'name.minLength',
-        message: 'Nome deve ter ao menos 2 caracteres.',
+        message: 'Name must have at least 2 characters.',
       });
-    }
 
     if (
       typeof this.props.name === 'string' &&
       this.props.name.trim().length > 120
-    ) {
+    )
       issues.push({
         path: 'name',
         code: 'name.maxLength',
-        message: 'Nome deve ter no máximo 120 caracteres.',
+        message: 'Name must have at most 120 characters.',
       });
-    }
+  }
 
+  private validateDocument(issues: ValidationIssue[]) {
     if (
       typeof this.props.document !== 'string' ||
       this.props.document.trim().length === 0
-    ) {
+    )
       issues.push({
         path: 'document',
         code: 'document.required',
-        message: 'Documento é obrigatório.',
+        message: 'Document is required.',
       });
-    } else if (this.props.document.trim().length > 50) {
+    else if (this.props.document.trim().length > 50)
       issues.push({
         path: 'document',
         code: 'document.maxLength',
-        message: 'Documento deve ter no máximo 50 caracteres.',
+        message: 'Document must have at most 50 characters.',
       });
-    }
+  }
 
-    console.log({
-      birthDate: this.props.birthDate,
-      valid: isValidDate(this.props.birthDate),
-    });
+  private validateTemporalProps(issues: ValidationIssue[]) {
+    const now = new Date();
+    const minBirth = new Date('1900-01-01T00:00:00Z');
 
-    if (!isValidDate(this.props.birthDate)) {
+    if (!this.isValidDate(this.props.birthDate))
       issues.push({
         path: 'birthDate',
         code: 'birthDate.invalid',
-        message: 'Data de nascimento inválida.',
+        message: 'Birth date is invalid.',
       });
-    } else {
-      if (this.props.birthDate < minBirth) {
+    else {
+      if (this.props.birthDate < minBirth)
         issues.push({
           path: 'birthDate',
           code: 'birthDate.tooEarly',
-          message: 'Data de nascimento muito antiga.',
+          message: 'Birth date is too early.',
         });
-      }
-
-      if (this.props.birthDate > now) {
+      if (this.props.birthDate > now)
         issues.push({
           path: 'birthDate',
           code: 'birthDate.inFuture',
-          message: 'Data de nascimento não pode ser no futuro.',
+          message: 'Birth date cannot be in the future.',
         });
-      }
     }
 
-    if (!isValidDate(this.props.createdAt) || this.props.createdAt > now) {
+    if (!this.isValidDate(this.props.createdAt) || this.props.createdAt > now)
       issues.push({
         path: 'createdAt',
         code: 'createdAt.invalid',
-        message: 'createdAt inválido.',
+        message: 'createdAt is invalid.',
       });
-    }
 
     if (
-      !isValidDate(this.props.updatedAt) ||
+      !this.isValidDate(this.props.updatedAt) ||
       this.props.updatedAt < this.props.createdAt ||
       this.props.updatedAt > now
-    ) {
+    )
       issues.push({
         path: 'updatedAt',
         code: 'updatedAt.invalid',
-        message: 'updatedAt inválido.',
+        message: 'updatedAt is invalid.',
       });
-    }
 
     const deletedAt = this.props.deletedAt;
     if (deletedAt !== null) {
       if (
-        !isValidDate(deletedAt) ||
+        !this.isValidDate(deletedAt) ||
         deletedAt < this.props.createdAt ||
         deletedAt > now
-      ) {
+      )
         issues.push({
           path: 'deletedAt',
           code: 'deletedAt.invalid',
-          message: 'deletedAt inválido.',
+          message: 'deletedAt is invalid.',
         });
-      }
     }
+  }
 
+  private validateRelations(issues: ValidationIssue[]) {
     const selfId = this.getId().toValue();
     const fatherIdVal = this.props.fatherId?.toValue();
     const motherIdVal = this.props.motherId?.toValue();
 
-    if (fatherIdVal === selfId) {
+    if (fatherIdVal === selfId)
       issues.push({
         path: 'fatherId',
         code: 'relation.selfParent',
-        message: 'Pai não pode ser o próprio.',
+        message: 'Father cannot be self.',
       });
-    }
-
-    if (motherIdVal === selfId) {
+    if (motherIdVal === selfId)
       issues.push({
         path: 'motherId',
         code: 'relation.selfParent',
-        message: 'Mãe não pode ser a própria.',
+        message: 'Mother cannot be self.',
       });
-    }
-
-    if (fatherIdVal && motherIdVal && fatherIdVal === motherIdVal) {
+    if (fatherIdVal && motherIdVal && fatherIdVal === motherIdVal)
       issues.push({
         path: 'fatherId|motherId',
         code: 'relation.parentsDistinct',
-        message: 'Pai e mãe devem ser diferentes.',
+        message: 'Father and mother must be different.',
       });
-    }
 
     if (
       this.props.father &&
       this.props.father.getId().toValue() !== fatherIdVal
-    ) {
+    )
       issues.push({
         path: 'father',
         code: 'relation.inconsistentId',
-        message: 'Entidade pai não confere com fatherId.',
+        message: 'Father entity does not match fatherId.',
       });
-    }
-
     if (
       this.props.mother &&
       this.props.mother.getId().toValue() !== motherIdVal
-    ) {
+    )
       issues.push({
         path: 'mother',
         code: 'relation.inconsistentId',
-        message: 'Entidade mãe não confere com motherId.',
+        message: 'Mother entity does not match motherId.',
       });
-    }
-
     if (
       this.props.father &&
-      (!isValidDate(this.props.father.getBirthDate()) ||
+      (!this.isValidDate(this.props.father.getBirthDate()) ||
         this.props.father.getBirthDate() >= this.props.birthDate)
-    ) {
+    )
       issues.push({
         path: 'father.birthDate',
         code: 'relation.birthOrder',
-        message: 'Data de nascimento do pai deve ser anterior à do filho.',
+        message: "Father's birth date must be before child's birth date.",
       });
-    }
-
     if (
       this.props.mother &&
-      (!isValidDate(this.props.mother.getBirthDate()) ||
+      (!this.isValidDate(this.props.mother.getBirthDate()) ||
         this.props.mother.getBirthDate() >= this.props.birthDate)
-    ) {
+    )
       issues.push({
         path: 'mother.birthDate',
         code: 'relation.birthOrder',
-        message: 'Data de nascimento da mãe deve ser anterior à do filho.',
+        message: "Mother's birth date must be before child's birth date.",
       });
-    }
-
-    return { ok: issues.length === 0, errors: issues };
   }
 
   assertValid(): this {
@@ -299,18 +245,10 @@ export class FamilyDomain extends Entity<FamilyProps> {
 
     if (!result.ok)
       throw new DomainValidationError(
-        'Falha de validação em FamilyDomain',
+        'Validation failure in FamilyDomain',
         result.errors,
       );
 
     return this;
-  }
-
-  toPersistence() {
-    return FamilyMapper.domainToPersistence(this);
-  }
-
-  toPresenter() {
-    return FamilyMapper.domainToPresenter(this);
   }
 }

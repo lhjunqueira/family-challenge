@@ -3,7 +3,7 @@ services:
     build: .
     container_name: myio-backend
     ports:
-      - "${DEV_PORT}:3000"
+      - "${DEV_PORT:-3500}:${DEV_PORT:-3500}"
     environment:
       NODE_ENV: development
     volumes:

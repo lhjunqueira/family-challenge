@@ -1,5 +1,5 @@
 import { UniqueEntityID } from '@/core/unique-entity-id';
-import { FamilyDomain } from '../domain/family.domain';
+import { Family } from '../domain/family.domain';
 import { FamilyDatabaseInterface } from '../repositories/family.repo.interface';
 
 export interface FamilyPresenter {
@@ -16,7 +16,7 @@ export interface FamilyPresenter {
 }
 
 export class FamilyMapper {
-  static domainToPersistence(family: FamilyDomain): FamilyDatabaseInterface {
+  static domainToPersistence(family: Family): FamilyDatabaseInterface {
     return {
       id: family.getId().toValue(),
       name: family.getName(),
@@ -27,10 +27,8 @@ export class FamilyMapper {
     };
   }
 
-  static persistenceToDomain(
-    familyData: FamilyDatabaseInterface,
-  ): FamilyDomain {
-    return new FamilyDomain(
+  static persistenceToDomain(familyData: FamilyDatabaseInterface): Family {
+    return new Family(
       {
         name: familyData.name,
         birthDate: familyData.birthDate,
@@ -46,7 +44,7 @@ export class FamilyMapper {
     );
   }
 
-  static domainToPresenter(family: FamilyDomain): FamilyPresenter {
+  static domainToPresenter(family: Family): FamilyPresenter {
     return {
       id: family.getId().toValue(),
       name: family.getName(),
@@ -54,9 +52,17 @@ export class FamilyMapper {
       document: family.getDocument(),
       fatherId: family.getFatherId()?.toValue() ?? null,
       motherId: family.getMotherId()?.toValue() ?? null,
-      father: family.getFather()?.toPresenter(),
-      mother: family.getMother()?.toPresenter(),
-      children: family.getChildren()?.map((child) => child.toPresenter()),
+      father: family.getFather()
+        ? FamilyMapper.domainToPresenter(family.getFather()!)
+        : undefined,
+      mother: family.getMother()
+        ? FamilyMapper.domainToPresenter(family.getMother()!)
+        : undefined,
+      children: family.getChildren()
+        ? family
+            .getChildren()!
+            .map((child) => FamilyMapper.domainToPresenter(child))
+        : undefined,
     };
   }
 }

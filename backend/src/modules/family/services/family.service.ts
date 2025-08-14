@@ -1,18 +1,38 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { UniqueEntityID } from '@/core/unique-entity-id';
-import { FamilyDomain } from '../domain/family.domain';
-import { FamilyRepository } from '../repositories/family.repository';
+import { Family } from '../domain/family.domain';
+import {
+  FAMILY_REPOSITORY,
+  IFamilyRepository,
+} from '../repositories/family.repository.interface';
 import { CreateUpdateFamilyDto } from '../dtos/create-update-family.dto';
+import { ListPaginated } from '../../../shared/types/list-paginated.class';
+import { FamilyFilterPaginatedDto } from '../dtos/family-filter-paginated.dto';
 
 @Injectable()
 export class FamilyService {
-  constructor(private readonly familyRepository: FamilyRepository) {}
+  constructor(
+    @Inject(FAMILY_REPOSITORY)
+    private readonly familyRepository: IFamilyRepository,
+  ) {}
 
-  async findById(id: UniqueEntityID): Promise<FamilyDomain> {
+  async findById(id: UniqueEntityID): Promise<Family> {
     const family = await this.familyRepository.findById(id);
 
     if (!family)
       throw new NotFoundException(`Family with ID ${id.toValue()} not found`);
+
+    const fatherId = family.getFatherId();
+    const father = fatherId
+      ? await this.familyRepository.findById(fatherId)
+      : null;
+    if (father) family.setFather(father);
+
+    const motherId = family.getMotherId();
+    const mother = motherId
+      ? await this.familyRepository.findById(motherId)
+      : null;
+    if (mother) family.setMother(mother);
 
     await this.familyRepository
       .findDescendants(id)
@@ -21,13 +41,15 @@ export class FamilyService {
     return family;
   }
 
-  async findAll(): Promise<FamilyDomain[]> {
-    const families = await this.familyRepository.findAll();
+  async findPaginated(
+    params?: FamilyFilterPaginatedDto,
+  ): Promise<ListPaginated<Family>> {
+    const families = await this.familyRepository.findPaginated(params);
     return families;
   }
 
-  async create(payload: CreateUpdateFamilyDto): Promise<FamilyDomain> {
-    const family = new FamilyDomain({
+  async create(payload: CreateUpdateFamilyDto): Promise<Family> {
+    const family = new Family({
       name: payload.name,
       birthDate: payload.birthDate,
       document: payload.document,
@@ -43,7 +65,7 @@ export class FamilyService {
   async update(
     id: UniqueEntityID,
     payload: CreateUpdateFamilyDto,
-  ): Promise<FamilyDomain> {
+  ): Promise<Family> {
     const family = await this.findById(id);
 
     family.update({
@@ -60,7 +82,7 @@ export class FamilyService {
   }
 
   private async validateFatherAndMotherExistence(
-    family: FamilyDomain,
+    family: Family,
   ): Promise<void> {
     const fatherId = family.getFatherId();
     const motherId = family.getMotherId();

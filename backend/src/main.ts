@@ -9,13 +9,20 @@ async function bootstrap() {
   const logger = new Logger('main');
   const configService = app.get(ConfigService);
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      transformOptions: { enableImplicitConversion: true },
-    }),
-  );
+  app
+    .useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        transform: true,
+        transformOptions: { enableImplicitConversion: true },
+      }),
+    )
+    .enableCors({
+      origin: 'http://localhost:4200',
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+      allowedHeaders: 'Content-Type,Authorization',
+      credentials: true,
+    });
 
   const portFromEnv =
     configService.get<string>('PORT') ?? configService.get<string>('DEV_PORT');

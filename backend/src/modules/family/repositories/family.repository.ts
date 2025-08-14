@@ -1,119 +1,112 @@
 import { Injectable } from '@nestjs/common';
 import { UniqueEntityID } from '../../../core/unique-entity-id';
-import { FamilyDomain } from '../domain/family.domain';
+import { Family } from '../domain/family.domain';
 import { FamilyMapper } from '../mappers/family.mapper';
 import { FamilyDatabaseInterface } from './family.repo.interface';
 import { FAMILY_MOCK } from '../mocks/family.mock';
+import { ListPaginated } from '../../../shared/types/list-paginated.class';
+import { FamilyFilterPaginatedDto } from '../dtos/family-filter-paginated.dto';
+import { IFamilyRepository } from './family.repository.interface';
+import { normalizeBasic } from '@/shared/utils/normalize';
 
-class FamilyInMemoryDatabase {
-  private families: FamilyDatabaseInterface[] = [];
-  private mappedFamilies: Map<string, FamilyDatabaseInterface> = new Map();
+@Injectable()
+export class FamilyRepository implements IFamilyRepository {
+  private families: FamilyDatabaseInterface[] = [...FAMILY_MOCK];
 
-  constructor() {
-    this.families = FAMILY_MOCK;
-    this.updateMapper();
-  }
-
-  updateMapper() {
-    this.mappedFamilies = new Map(
-      this.families.map((family) => [family.id, family]),
-    );
-  }
-
-  insert(family: FamilyDatabaseInterface) {
+  private insert(family: FamilyDatabaseInterface): void {
     this.families.unshift(family);
-    this.mappedFamilies.set(family.id, family);
   }
 
-  remove(familyId: UniqueEntityID): Promise<void> {
-    const id = familyId.toValue();
-
+  private removeCascade(id: string): void {
     for (const family of this.families) {
       if (family.fatherId === id) family.fatherId = null;
       if (family.motherId === id) family.motherId = null;
     }
-
     this.families = this.families.filter((family) => family.id !== id);
-    this.updateMapper();
-
-    return Promise.resolve();
   }
 
-  find(id: string): Promise<FamilyDatabaseInterface | undefined> {
-    return Promise.resolve(this.mappedFamilies.get(id));
+  private findRaw(id: string): FamilyDatabaseInterface | undefined {
+    return this.families.find((family) => family.id === id);
   }
 
-  findAll(): Promise<FamilyDatabaseInterface[]> {
-    return Promise.resolve(this.families);
+  private findAllRaw(): FamilyDatabaseInterface[] {
+    return this.families;
   }
 
-  findByParentId(parentId: UniqueEntityID): Promise<FamilyDatabaseInterface[]> {
-    return Promise.resolve(
-      this.families.filter(
-        (family) =>
-          family.fatherId === parentId.toValue() ||
-          family.motherId === parentId.toValue(),
-      ),
+  private findByParentIdRaw(
+    parentId: UniqueEntityID,
+  ): FamilyDatabaseInterface[] {
+    const pid = parentId.toValue();
+    return this.families.filter(
+      (family) => family.fatherId === pid || family.motherId === pid,
     );
   }
 
-  update(
+  private updateRaw(
     family: FamilyDatabaseInterface,
-  ): Promise<FamilyDatabaseInterface | null> {
+  ): FamilyDatabaseInterface | null {
     const index = this.families.findIndex((f) => f.id === family.id);
-
     if (index !== -1) {
       this.families[index] = family;
-      this.mappedFamilies.set(family.id, family);
-      return Promise.resolve(family);
+      return family;
+    }
+    return null;
+  }
+
+  findById(id: UniqueEntityID): Promise<Family | null> {
+    const familyData = this.findRaw(id.toValue());
+    return Promise.resolve(
+      familyData ? FamilyMapper.persistenceToDomain(familyData) : null,
+    );
+  }
+
+  findPaginated(
+    params?: FamilyFilterPaginatedDto,
+  ): Promise<ListPaginated<Family>> {
+    const families = this.findAllRaw();
+
+    const search = normalizeBasic(params?.search ?? '');
+
+    const page =
+      typeof params?.page === 'number' && params.page >= 0 ? params.page : 0;
+    const limit = params?.limit && params.limit > 0 ? params.limit : 10;
+
+    let filtered = families;
+
+    if (search) {
+      filtered = filtered.filter((f) => {
+        const name = normalizeBasic(f.name);
+        const document = normalizeBasic(f.document);
+        return name.includes(search) || document.includes(search);
+      });
     }
 
-    return Promise.resolve(null);
-  }
-}
+    const total = filtered.length;
+    const start = page * limit;
+    const paginated = filtered.slice(start, start + limit);
+    const mapped = paginated.map((f) => FamilyMapper.persistenceToDomain(f));
 
-@Injectable()
-export class FamilyRepository {
-  private _families = new FamilyInMemoryDatabase();
-
-  async findById(id: UniqueEntityID): Promise<FamilyDomain | null> {
-    return this._families
-      .find(id.toValue())
-      .then((familyData) =>
-        familyData ? FamilyMapper.persistenceToDomain(familyData) : null,
-      );
+    return Promise.resolve(new ListPaginated(mapped, total));
   }
 
-  async findAll(): Promise<FamilyDomain[]> {
-    return this._families
-      .findAll()
-      .then((families) =>
-        families.map((family) => FamilyMapper.persistenceToDomain(family)),
-      );
+  findDescendants(id: UniqueEntityID): Promise<Family[]> {
+    const families = this.findByParentIdRaw(id);
+    return Promise.resolve(
+      families.map((family) => FamilyMapper.persistenceToDomain(family)),
+    );
   }
 
-  async findDescendants(id: UniqueEntityID): Promise<FamilyDomain[]> {
-    return this._families
-      .findByParentId(id)
-      .then((families) =>
-        families.map((family) => FamilyMapper.persistenceToDomain(family)),
-      );
-  }
-
-  async persist(family: FamilyDomain): Promise<FamilyDomain> {
+  persist(family: Family): Promise<Family> {
     family.assertValid();
-
-    return this._families
-      .find(family.getId().toValue())
-      .then(async (existing) => {
-        if (existing) await this._families.update(family.toPersistence());
-        else this._families.insert(family.toPersistence());
-
-        return Promise.resolve(family);
-      });
+    const existing = this.findRaw(family.getId().toValue());
+    const persistence = FamilyMapper.domainToPersistence(family);
+    if (existing) this.updateRaw(persistence);
+    else this.insert(persistence);
+    return Promise.resolve(family);
   }
 
-  async delete(familyId: UniqueEntityID): Promise<void> {
-    await this._families.remove(familyId);
+  delete(familyId: UniqueEntityID): Promise<void> {
+    this.removeCascade(familyId.toValue());
+    return Promise.resolve();
   }
 }
