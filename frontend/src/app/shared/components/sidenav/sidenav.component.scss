@@ -1,0 +1,33 @@
+.example-container {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  inset: 0;
+}
+
+.example-is-mobile {
+  .example-toolbar {
+    position: fixed;
+    z-index: 2;
+  }
+
+  .example-sidenav-container {
+    flex: 1 0 auto;
+  }
+}
+
+h1.example-app-name {
+  margin-left: 8px;
+}
+
+.example-sidenav-container {
+  flex: 1;
+}
+
+.mat-sidenav-list {
+  padding: 16px 32px !important;
+}
+
+.mat-sidenav-content {
+  padding: 2rem !important;
+}

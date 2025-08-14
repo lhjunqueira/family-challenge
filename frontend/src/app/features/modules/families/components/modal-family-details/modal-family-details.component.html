@@ -1,0 +1,74 @@
+<div
+  class="details-wrapper"
+  *ngIf="family$ | async as family; else loadingOrEmpty"
+>
+  <header class="details-header">
+    <h1 class="title">{{ family.name }}</h1>
+    <button
+      mat-icon-button
+      aria-label="Fechar"
+      (click)="close()"
+      class="close-btn"
+    >
+      <mat-icon>close</mat-icon>
+    </button>
+  </header>
+
+  <section class="info-grid">
+    <mat-card class="panel person">
+      <h2 class="panel-title">Personal Data</h2>
+      <div class="row">
+        <span class="label">Document:</span
+        ><span class="value">{{ family.document }}</span>
+      </div>
+      <div class="row">
+        <span class="label">Birth Date:</span
+        ><span class="value">{{ family.birthDate | date : "dd/MM/yyyy" }}</span>
+      </div>
+    </mat-card>
+
+    <mat-card class="panel parents">
+      <h2 class="panel-title">Parentage</h2>
+      <div class="row">
+        <span class="label">Father:</span
+        ><span class="value">{{ family.father?.name || "Not informed" }}</span>
+      </div>
+      <div class="row">
+        <span class="label">Mother:</span
+        ><span class="value">{{ family.mother?.name || "Not informed" }}</span>
+      </div>
+    </mat-card>
+  </section>
+
+  <section class="children-section">
+    <mat-card class="panel children">
+      <h2 class="panel-title">Children</h2>
+      <div *ngIf="!family.children?.length" class="empty">
+        No children registered.
+      </div>
+      <ul *ngIf="family.children?.length" class="children-list">
+        <li *ngFor="let child of family.children; trackBy: trackByChildId">
+          <span class="child-name">{{ child.name }}</span>
+          <span class="child-birth">{{
+            child.birthDate | date : "dd/MM/yyyy"
+          }}</span>
+        </li>
+      </ul>
+    </mat-card>
+  </section>
+</div>
+
+<ng-template #loadingOrEmpty>
+  <div class="state-wrapper" *ngIf="loading$ | async; else stateErrorOrEmpty">
+    <div class="spinner">Loading...</div>
+  </div>
+</ng-template>
+
+<ng-template #stateErrorOrEmpty>
+  <div *ngIf="error$ | async as error" class="state-wrapper error">
+    {{ error }}
+  </div>
+  <div *ngIf="!(error$ | async)" class="state-wrapper empty">
+    No family loaded.
+  </div>
+</ng-template>

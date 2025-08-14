@@ -1,0 +1,44 @@
+<mat-form-field
+  appearance="outline"
+  subscriptSizing="dynamic"
+  class="families-autocomplete-field"
+>
+  <mat-label>{{ label }}</mat-label>
+  <input
+    type="text"
+    matInput
+    [matAutocomplete]="auto"
+    [formControl]="searchControl"
+    placeholder="Search and select"
+    autocomplete="off"
+  />
+
+  <button
+    *ngIf="searchControl.value"
+    mat-icon-button
+    matSuffix
+    (click)="clearSelection()"
+    aria-label="Clear selection"
+  >
+    <mat-icon>close</mat-icon>
+  </button>
+
+  <mat-progress-spinner
+    *ngIf="loading$ | async"
+    matSuffix
+    diameter="20"
+    mode="indeterminate"
+  ></mat-progress-spinner>
+
+  <mat-autocomplete
+    #auto="matAutocomplete"
+    (optionSelected)="onOptionSelected($event.option.value)"
+  >
+    <mat-option *ngIf="(families$ | async)?.length === 0" disabled>
+      No families found
+    </mat-option>
+    <ng-container *ngFor="let item of families$ | async">
+      <mat-option [value]="item.id">{{ item.name }}</mat-option>
+    </ng-container>
+  </mat-autocomplete>
+</mat-form-field>

@@ -1,0 +1,43 @@
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  &::before {
+    display: none !important;
+  }
+}
+
+.custom-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: auto;
+  gap: 16px;
+
+  & > :nth-child(1) {
+    grid-column: 1 / span 2;
+  }
+
+  & > :nth-child(2) {
+    grid-column: 1;
+  }
+
+  & > :nth-child(3) {
+    grid-column: 2;
+  }
+
+  & > :nth-child(4) {
+    grid-column: 1 / span 2;
+  }
+
+  & > :nth-child(5) {
+    grid-column: 1 / span 2;
+  }
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr !important;
+    & > * {
+      grid-column: auto !important;
+    }
+  }
+}

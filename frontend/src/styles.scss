@@ -1,0 +1,50 @@
+@use "styles/tokens" as *;
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+.mat-mdc-dialog-container {
+  /* Borda arredondada e cor via tokens do MDC */
+  --mdc-dialog-container-shape: 20px;
+  --mdc-dialog-container-color: #{$primary-light};
+  /* Fallback Angular Material (algumas versões usam esta var custom) */
+  --mat-dialog-container-background-color: #{$primary-light};
+
+  .mat-mdc-dialog-content {
+    padding-top: 8px !important;
+    /* Remover qualquer fundo herdado externo */
+    background: transparent !important;
+  }
+}
+
+.mat-bottom-sheet-container {
+  padding: 24px 16px 16px 16px !important;
+  border-radius: 16px 16px 0px 0px;
+}
+
+/* Reforço direto na superfície (nome de classe interno do MDC) */
+.mdc-dialog__surface,
+.mat-mdc-dialog-surface {
+  padding: 24px !important;
+  gap: 16px !important;
+  background: $primary-light !important;
+}
+
+mat-form-field {
+  width: 100% !important;
+}
+
+.mdc-form-field,
+.mat-internal-form-field {
+  width: 100% !important;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}

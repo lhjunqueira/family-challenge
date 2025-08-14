@@ -1,0 +1,49 @@
+{
+  "name": "challenge-frontend",
+  "version": "0.0.0",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "build": "ng build",
+    "watch": "ng build --watch --configuration development",
+    "test": "CHROME_BIN=\"$(node -e \"console.log(require('puppeteer').executablePath())\")\" ng test --watch=false --browsers=ChromeHeadlessNoSandbox",
+    "test:ci": "CHROME_BIN=\"$(node -e \"console.log(require('puppeteer').executablePath())\")\" ng test --watch=false --browsers=ChromeHeadlessNoSandbox --code-coverage"
+  },
+  "private": true,
+  "dependencies": {
+    "@angular/animations": "^17.3.0",
+    "@angular/cdk": "^17.3.10",
+    "@angular/common": "^17.3.0",
+    "@angular/compiler": "^17.3.0",
+    "@angular/core": "^17.3.0",
+    "@angular/forms": "^17.3.0",
+    "@angular/material": "^17.3.10",
+    "@angular/platform-browser": "^17.3.0",
+    "@angular/platform-browser-dynamic": "^17.3.0",
+    "@angular/router": "^17.3.0",
+    "@ngrx/component-store": "17.2.0",
+    "@ngrx/effects": "17.2.0",
+    "@ngrx/entity": "17.2.0",
+    "@ngrx/store": "17.2.0",
+    "@ngrx/store-devtools": "17.2.0",
+    "ngx-mask": "^20.0.3",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0",
+    "zone.js": "~0.14.3"
+  },
+  "devDependencies": {
+    "@angular-devkit/build-angular": "^17.3.13",
+    "@angular/cli": "^17",
+    "@angular/compiler-cli": "^17.3.0",
+    "@types/jasmine": "~5.1.0",
+    "jasmine-core": "~5.1.0",
+    "karma": "~6.4.0",
+    "karma-chrome-launcher": "~3.2.0",
+    "karma-coverage": "~2.2.0",
+    "karma-jasmine": "~5.1.0",
+    "karma-jasmine-html-reporter": "~2.1.0",
+    "puppeteer": "^24.16.1",
+    "typescript": "~5.4.2"
+  },
+  "packageManager": "pnpm@10.7.0+sha512.6b865ad4b62a1d9842b61d674a393903b871d9244954f652b8842c2b553c72176b278f64c463e52d40fff8aba385c235c8c9ecf5cc7de4fd78b8bb6d49633ab6"
+}

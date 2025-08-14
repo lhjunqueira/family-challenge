@@ -1,0 +1,100 @@
+<ng-container *ngIf="formGroup">
+  <div mat-dialog-title class="modal-header">
+    <span> Modal Create/Update Family </span>
+
+    <button mat-icon-button (click)="cancel()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <mat-dialog-content>
+    <form [formGroup]="formGroup" class="custom-grid">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Name</mat-label>
+
+        <input matInput [formControl]="formGroup.controls.name" />
+
+        <mat-error *ngIf="formGroup.controls.name.hasError('required')">
+          Name is required
+        </mat-error>
+        <mat-error *ngIf="formGroup.controls.name.hasError('minlength')">
+          Name must be at least
+          {{ formGroup.controls.name.getError("minlength").requiredLength }}
+        </mat-error>
+        <mat-error *ngIf="formGroup.controls.name.hasError('maxlength')">
+          Name must be at most
+          {{ formGroup.controls.name.getError("maxlength").requiredLength }}
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Date</mat-label>
+        <input
+          matInput
+          [matDatepicker]="picker"
+          [formControl]="formGroup.controls.birthDate"
+        />
+
+        <mat-datepicker-toggle
+          matIconSuffix
+          [for]="picker"
+        ></mat-datepicker-toggle>
+
+        <mat-datepicker #picker></mat-datepicker>
+
+        <mat-error *ngIf="formGroup.controls.birthDate.hasError('required')">
+          Date is required
+        </mat-error>
+
+        <mat-error *ngIf="formGroup.controls.birthDate.hasError('min')">
+          Date must be after
+          {{
+            formGroup.controls.birthDate.getError("min")?.min
+              ? (formGroup.controls.birthDate.getError("min").min
+                | date : "dd/MM/yyyy")
+              : ""
+          }}
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Document</mat-label>
+
+        <input
+          matInput
+          type="text"
+          [formControl]="formGroup.controls.document"
+          mask="000.000.000-00"
+          placeholder="000.000.000-00"
+        />
+
+        <mat-error *ngIf="formGroup.controls.document.hasError('required')">
+          Document is required
+        </mat-error>
+        <mat-error *ngIf="formGroup.controls.document.hasError('minlength')">
+          Document must be at least
+          {{ formGroup.controls.document.getError("minlength").requiredLength }}
+        </mat-error>
+        <mat-error *ngIf="formGroup.controls.document.hasError('maxlength')">
+          Document must be at most
+          {{ formGroup.controls.document.getError("maxlength").requiredLength }}
+        </mat-error>
+      </mat-form-field>
+
+      <families-select
+        [formControl]="formGroup.controls.fatherId"
+        [label]="'Father'"
+      ></families-select>
+
+      <families-select
+        [formControl]="formGroup.controls.motherId"
+        [label]="'Mother'"
+      ></families-select>
+    </form>
+  </mat-dialog-content>
+
+  <mat-dialog-actions>
+    <button mat-button type="submit" (click)="save()">Save</button>
+    <button mat-button (click)="cancel()">Cancel</button>
+  </mat-dialog-actions>
+</ng-container>

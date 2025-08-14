@@ -1,0 +1,85 @@
+<div class="list-families-container">
+  <div class="upper-page-container">
+    <form [formGroup]="form" class="filter-form-container">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label> Search family </mat-label>
+        <input matInput [formControl]="form.controls.search" />
+      </mat-form-field>
+    </form>
+
+    <div class="buttons-container">
+      <button mat-flat-button color="primary" (click)="createFamily()">
+        <mat-icon> add </mat-icon>
+        Add Family
+      </button>
+    </div>
+  </div>
+
+  <ng-container *ngIf="families$ | async as families">
+    <mat-card *ngIf="families.length > 0" class="custom-card">
+      <mat-paginator
+        [pageSize]="10"
+        [length]="totalFamilies$ | async"
+        (page)="onPageChange($event)"
+      />
+
+      <table mat-table [dataSource]="families" [trackBy]="trackByFamilyId">
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef>Name</th>
+          <td mat-cell *matCellDef="let family">{{ family.name }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="birthDate">
+          <th mat-header-cell *matHeaderCellDef>Birth Date</th>
+          <td mat-cell *matCellDef="let family">
+            {{ family.birthDate | date : "dd/MM/yyyy" }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="document">
+          <th mat-header-cell *matHeaderCellDef>Document</th>
+          <td mat-cell *matCellDef="let family">{{ family.document | cpf }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let family">
+            <button
+              mat-icon-button
+              color="primary"
+              (click)="viewFamilyDetails(family)"
+            >
+              <mat-icon>visibility</mat-icon>
+            </button>
+
+            <button
+              mat-icon-button
+              color="primary"
+              (click)="editFamily(family)"
+            >
+              <mat-icon>edit</mat-icon>
+            </button>
+
+            <button mat-icon-button color="warn" (click)="deleteFamily(family)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <thead>
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        </thead>
+        <tbody>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        </tbody>
+      </table>
+    </mat-card>
+
+    <ng-container *ngIf="families.length === 0">
+      <mat-card class="empty-state-card">
+        <h2>No families found</h2>
+        <p>Try adjusting your search or add a new family to get started.</p>
+      </mat-card>
+    </ng-container>
+  </ng-container>
+</div>
