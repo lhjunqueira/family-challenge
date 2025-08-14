@@ -1,6 +1,5 @@
 import { FamilyModel } from './family.model';
 
-// Garante que birthDate e datas aninhadas sejam instâncias de Date.
 export function adaptFamily(raw: any): FamilyModel {
   if (!raw) return raw;
   const parseDate = (d: any) => (d ? new Date(d) : d);

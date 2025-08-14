@@ -6,7 +6,6 @@ import {
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { Observable } from 'rxjs';
 
-// Abre dialog ou bottom sheet conforme breakpoint.
 export function openResponsiveModal<T, R = any>(
   media: MediaMatcher,
   dialog: MatDialog,
